@@ -30,6 +30,9 @@ class TenEnvTester(TenEnvTesterBase):
     def __del__(self) -> None:
         pass
 
+    def on_init_done(self) -> None:
+        return self._internal.on_init_done()
+
     def on_start_done(self) -> None:
         return self._internal.on_start_done()
 
@@ -75,9 +78,6 @@ class TenEnvTester(TenEnvTesterBase):
     ) -> Optional[TenError]:
         return self._internal.return_result(cmd_result, error_handler)
 
-    def stop_test(self) -> None:
-        return self._internal.stop_test()
-
 
 class ExtensionTester(_ExtensionTester):
     @final
@@ -89,8 +89,19 @@ class ExtensionTester(_ExtensionTester):
         )
 
     @final
-    def run(self) -> None:
+    def set_timeout(self, timeout_us: int) -> None:
+        return _ExtensionTester.set_timeout(self, timeout_us)
+
+    @final
+    def run(self) -> Optional[TenError]:
         return _ExtensionTester.run(self)
+
+    @final
+    def _proxy_on_init(self, ten_env_tester: TenEnvTester) -> None:
+        self.on_init(ten_env_tester)
+
+    def on_init(self, ten_env_tester: TenEnvTester) -> None:
+        ten_env_tester.on_init_done()
 
     @final
     def _proxy_on_start(self, ten_env_tester: TenEnvTester) -> None:
