@@ -51,9 +51,9 @@ pub fn pathbuf_to_string_lossy(path_buf: &Path) -> String {
 }
 
 /// Check if the directory specified by `path` is an app directory.
-pub fn check_is_app_folder(path: &Path) -> Result<()> {
+pub async fn check_is_app_folder(path: &Path) -> Result<()> {
     let manifest =
-        ten_rust::pkg_info::manifest::parse_manifest_in_folder(path)?;
+        ten_rust::pkg_info::manifest::parse_manifest_in_folder(path).await?;
     if manifest.type_and_name.pkg_type != PkgType::App {
         return Err(anyhow!("The `type` in manifest.json is not `app`."));
     }
@@ -74,27 +74,8 @@ pub fn check_is_valid_dir(path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Check if the directory specified by `path` is an extension directory.
-pub fn check_is_addon_folder(path: &Path) -> Result<()> {
-    let manifest =
-        ten_rust::pkg_info::manifest::parse_manifest_in_folder(path)?;
-
-    let pkg_type = manifest.type_and_name.pkg_type;
-    if pkg_type != PkgType::Extension
-        && pkg_type != PkgType::AddonLoader
-        && pkg_type != PkgType::Protocol
-        && pkg_type != PkgType::System
-    {
-        return Err(anyhow!(
-            "The `type` in manifest.json does not belong to an addon type."
-        ));
-    }
-
-    Ok(())
-}
-
 /// Search upwards for the nearest app directory.
-pub fn find_nearest_app_dir(mut start_dir: PathBuf) -> Result<PathBuf> {
+pub async fn find_nearest_app_dir(mut start_dir: PathBuf) -> Result<PathBuf> {
     loop {
         let manifest_path = start_dir.join(MANIFEST_JSON_FILENAME);
         if manifest_path.exists() {
@@ -102,7 +83,8 @@ pub fn find_nearest_app_dir(mut start_dir: PathBuf) -> Result<PathBuf> {
             let manifest =
                 ten_rust::pkg_info::manifest::parse_manifest_in_folder(
                     &start_dir,
-                )?;
+                )
+                .await?;
             if manifest.type_and_name.pkg_type == PkgType::App {
                 return Ok(start_dir);
             }

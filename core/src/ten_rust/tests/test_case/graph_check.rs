@@ -6,7 +6,7 @@
 //
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, path::Path, str::FromStr};
+    use std::{collections::HashMap, path::Path};
 
     use uuid::Uuid;
 
@@ -23,8 +23,8 @@ mod tests {
         pkg_info::get_app_installed_pkgs,
     };
 
-    #[test]
-    fn test_graph_check_extension_not_installed_1() {
+    #[tokio::test]
+    async fn test_graph_check_extension_not_installed_1() {
         let mut graphs_cache: HashMap<Uuid, GraphInfo> = HashMap::new();
 
         let app_dir = "tests/test_data/graph_check_extension_not_installed_1";
@@ -33,6 +33,7 @@ mod tests {
             true,
             &mut Some(&mut graphs_cache),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
@@ -48,8 +49,8 @@ mod tests {
         println!("Error: {:?}", result.err().unwrap());
     }
 
-    #[test]
-    fn test_graph_check_extension_not_installed_2() {
+    #[tokio::test]
+    async fn test_graph_check_extension_not_installed_2() {
         let mut graphs_cache: HashMap<Uuid, GraphInfo> = HashMap::new();
 
         let app_dir = "tests/test_data/graph_check_extension_not_installed_2";
@@ -58,6 +59,7 @@ mod tests {
             true,
             &mut Some(&mut graphs_cache),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
@@ -72,8 +74,8 @@ mod tests {
         println!("Error: {:?}", result.err().unwrap());
     }
 
-    #[test]
-    fn test_graph_check_predefined_graph_success() {
+    #[tokio::test]
+    async fn test_graph_check_predefined_graph_success() {
         let mut graphs_cache: HashMap<Uuid, GraphInfo> = HashMap::new();
 
         let app_dir = "tests/test_data/graph_check_predefined_graph_success";
@@ -82,6 +84,7 @@ mod tests {
             true,
             &mut Some(&mut graphs_cache),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
@@ -96,8 +99,8 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_graph_check_all_msgs_schema_incompatible() {
+    #[tokio::test]
+    async fn test_graph_check_all_msgs_schema_incompatible() {
         let mut graphs_cache: HashMap<Uuid, GraphInfo> = HashMap::new();
 
         let app_dir =
@@ -107,6 +110,7 @@ mod tests {
             true,
             &mut Some(&mut graphs_cache),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
@@ -121,20 +125,22 @@ mod tests {
         println!("Error: {:?}", result.err().unwrap());
     }
 
-    #[test]
-    fn test_graph_check_single_app() {
+    #[tokio::test]
+    async fn test_graph_check_single_app() {
         let app_dir = "tests/test_data/graph_check_single_app";
         let pkgs_info_in_app = get_app_installed_pkgs(
             Path::new(app_dir),
             true,
             &mut Some(&mut HashMap::new()),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
         let graph_json_str =
             include_str!("../test_data/graph_check_single_app/graph.json");
-        let graph = Graph::from_str(graph_json_str).unwrap();
+        let graph =
+            Graph::from_str_with_base_dir(graph_json_str, None).unwrap();
 
         let mut pkgs_cache: HashMap<String, PkgsInfoInApp> = HashMap::new();
         pkgs_cache.insert(app_dir.to_string(), pkgs_info_in_app);
@@ -147,21 +153,23 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_graph_check_builtin_extension() {
+    #[tokio::test]
+    async fn test_graph_check_builtin_extension() {
         let app_dir = "tests/test_data/graph_check_builtin_extension";
         let pkgs_info_in_app = get_app_installed_pkgs(
             Path::new(app_dir),
             true,
             &mut Some(&mut HashMap::new()),
         )
+        .await
         .unwrap();
         assert!(!pkgs_info_in_app.is_empty());
 
         let graph_json_str = include_str!(
             "../test_data/graph_check_builtin_extension/graph.json"
         );
-        let graph = Graph::from_str(graph_json_str).unwrap();
+        let graph =
+            Graph::from_str_with_base_dir(graph_json_str, None).unwrap();
 
         let mut pkgs_cache: HashMap<String, PkgsInfoInApp> = HashMap::new();
         pkgs_cache.insert(app_dir.to_string(), pkgs_info_in_app);
@@ -172,8 +180,8 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_graph_check_subgraph_reference_missing() {
+    #[tokio::test]
+    async fn test_graph_check_subgraph_reference_missing() {
         // Test that subgraph references in connections are validated
         let graph_json = r#"
         {
@@ -203,7 +211,7 @@ mod tests {
         }
         "#;
 
-        let graph = Graph::from_str(graph_json).unwrap();
+        let graph = Graph::from_str_with_base_dir(graph_json, None).unwrap();
         let pkgs_cache: HashMap<String, PkgsInfoInApp> = HashMap::new();
 
         let result = graph.check(&None, &pkgs_cache);
@@ -214,8 +222,8 @@ mod tests {
         assert!(error_msg.contains("is not defined in nodes"));
     }
 
-    #[test]
-    fn test_graph_check_subgraph_reference_valid() {
+    #[tokio::test]
+    async fn test_graph_check_subgraph_reference_valid() {
         // Test that valid subgraph references pass validation
         // Construct the graph directly to avoid triggering file loading during
         // parsing
@@ -228,7 +236,7 @@ mod tests {
                     extension_group: Some("some_group".to_string()),
                     app: None,
                     property: None,
-                    source_uri: None,
+                    import_uri: None,
                 },
                 GraphNode {
                     type_: GraphNodeType::Subgraph,
@@ -237,7 +245,7 @@ mod tests {
                     extension_group: None,
                     app: None,
                     property: None,
-                    source_uri: Some("/tmp/subgraph.json".to_string()),
+                    import_uri: Some("/tmp/subgraph.json".to_string()),
                 },
             ],
             connections: Some(vec![GraphConnection {
@@ -278,8 +286,8 @@ mod tests {
         assert!(!error_msg.contains("subgraph 'subgraph_1'"));
     }
 
-    #[test]
-    fn test_graph_check_direct_subgraph_reference_missing() {
+    #[tokio::test]
+    async fn test_graph_check_direct_subgraph_reference_missing() {
         // Test that direct subgraph references in connections are validated
         let graph_json = r#"
         {
@@ -309,7 +317,7 @@ mod tests {
         }
         "#;
 
-        let graph = Graph::from_str(graph_json).unwrap();
+        let graph = Graph::from_str_with_base_dir(graph_json, None).unwrap();
         let pkgs_cache: HashMap<String, PkgsInfoInApp> = HashMap::new();
 
         let result = graph.check(&None, &pkgs_cache);

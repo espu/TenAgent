@@ -12,7 +12,6 @@ pub mod node;
 pub mod subgraph;
 
 use std::collections::HashMap;
-use std::str::FromStr;
 
 use anyhow::Result;
 use node::GraphNode;
@@ -169,6 +168,7 @@ pub struct GraphExposedProperty {
 /// other.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Graph {
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub nodes: Vec<GraphNode>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -181,20 +181,34 @@ pub struct Graph {
     pub exposed_properties: Option<Vec<GraphExposedProperty>>,
 }
 
-impl FromStr for Graph {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl Graph {
+    /// Parses a JSON string into a Graph with validation, completion, and
+    /// flattening.
+    ///
+    /// This function takes a JSON string representation of a graph and an
+    /// optional current_base_dir parameter, parses it into a Graph structure,
+    /// then validates, completes, and flattens the graph.
+    ///
+    /// # Parameters
+    /// - `s`: A string slice containing the JSON representation of the graph
+    /// - `current_base_dir`: An optional base directory path used for resolving
+    ///   relative paths during graph flattening
+    ///
+    /// # Returns
+    /// - `Ok(Graph)`: Successfully parsed and processed graph
+    /// - `Err(anyhow::Error)`: Parsing, validation, or processing error
+    pub fn from_str_with_base_dir(
+        s: &str,
+        current_base_dir: Option<&str>,
+    ) -> Result<Self> {
         let mut graph: Graph = serde_json::from_str(s)?;
 
-        graph.validate_and_complete_and_flatten(None)?;
+        graph.validate_and_complete_and_flatten(current_base_dir)?;
 
         // Return the parsed data.
         Ok(graph)
     }
-}
 
-impl Graph {
     /// Determines how app URIs are declared across all nodes in the graph.
     ///
     /// This method analyzes all nodes in the graph to determine the app
@@ -325,22 +339,19 @@ impl Graph {
 
         // Always attempt to flatten the graph, regardless of current_base_dir
         // If there are subgraphs that need current_base_dir but it's None,
-        // the flatten_graph method will return an appropriate error
+        // the flatten_graph method will return an appropriate error.
         if let Some(flattened) = self.flatten_graph(
-            &|uri: &str,
-              base_dir: Option<&str>,
-              new_base_dir: &mut Option<String>| {
-                crate::graph::graph_info::load_graph_from_uri(
-                    uri,
-                    base_dir,
-                    new_base_dir,
-                )
-            },
+            &crate::graph::graph_info::load_graph_from_uri,
             current_base_dir,
         )? {
             // Replace current graph with flattened version
             *self = flattened;
         }
+
+        // After flattening, there should basically be no logic that requires
+        // current_base_dir, so passing None here should not cause
+        // errors, and we can use this for validation.
+        self.validate_and_complete(None)?;
 
         Ok(())
     }

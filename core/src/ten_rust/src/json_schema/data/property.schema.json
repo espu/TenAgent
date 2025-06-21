@@ -251,8 +251,7 @@
       "additionalProperties": false,
       "required": [
         "type",
-        "name",
-        "addon"
+        "name"
       ],
       "properties": {
         "type": {
@@ -273,6 +272,11 @@
         },
         "extension_group": {
           "$ref": "#/$defs/alphanumericCharacters"
+        },
+        "import_uri": {
+          "type": "string",
+          "format": "uri-reference",
+          "minLength": 1
         },
         "property": {
           "type": "object",
@@ -306,7 +310,45 @@
           },
           "additionalProperties": false
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "extension"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "addon"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "subgraph"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "addon"
+              ]
+            }
+          }
+        }
+      ]
     },
     "graphConnection": {
       "type": "object",
@@ -740,8 +782,9 @@
                 "type": "boolean",
                 "default": false
               },
-              "source_uri": {
+              "import_uri": {
                 "type": "string",
+                "format": "uri-reference",
                 "minLength": 1
               },
               "nodes": {
@@ -860,7 +903,7 @@
             "oneOf": [
               {
                 "required": [
-                  "source_uri"
+                  "import_uri"
                 ],
                 "not": {
                   "anyOf": [
@@ -890,7 +933,7 @@
               {
                 "not": {
                   "required": [
-                    "source_uri"
+                    "import_uri"
                   ]
                 }
               }
