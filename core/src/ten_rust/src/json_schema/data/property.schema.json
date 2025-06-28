@@ -65,148 +65,7 @@
         "object"
       ]
     },
-    "cmdDest": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "app": {
-          "$ref": "#/$defs/notEmptyString"
-        },
-        "extension": {
-          "$ref": "#/$defs/alphanumericCharacters"
-        },
-        "subgraph": {
-          "$ref": "#/$defs/alphanumericCharacters"
-        },
-        "msg_conversion": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "rules"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "per_property"
-              ]
-            },
-            "keep_original": {
-              "type": "boolean"
-            },
-            "rules": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "path": {
-                    "$ref": "#/$defs/path_in_msg_conversion"
-                  },
-                  "conversion_mode": {
-                    "type": "string",
-                    "enum": [
-                      "fixed_value",
-                      "from_original"
-                    ]
-                  },
-                  "value": {
-                    "oneOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "boolean"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ]
-                  },
-                  "original_path": {
-                    "$ref": "#/$defs/notEmptyString"
-                  }
-                },
-                "allOf": [
-                  {
-                    "if": {
-                      "properties": {
-                        "conversion_mode": {
-                          "const": "fixed_value"
-                        }
-                      },
-                      "required": [
-                        "conversion_mode"
-                      ]
-                    },
-                    "then": {
-                      "required": [
-                        "value"
-                      ],
-                      "not": {
-                        "required": [
-                          "original_path"
-                        ]
-                      }
-                    },
-                    "else": {
-                      "if": {
-                        "properties": {
-                          "conversion_mode": {
-                            "const": "from_original"
-                          }
-                        },
-                        "required": [
-                          "conversion_mode"
-                        ]
-                      },
-                      "then": {
-                        "required": [
-                          "original_path"
-                        ],
-                        "not": {
-                          "required": [
-                            "value"
-                          ]
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-            "result": {
-              "$ref": "#/$defs/msgConversion"
-            }
-          }
-        }
-      },
-      "oneOf": [
-        {
-          "required": [
-            "extension"
-          ],
-          "not": {
-            "required": [
-              "subgraph"
-            ]
-          }
-        },
-        {
-          "required": [
-            "subgraph"
-          ],
-          "not": {
-            "required": [
-              "extension"
-            ]
-          }
-        }
-      ]
-    },
-    "dataDest": {
+    "msgDest": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -246,13 +105,49 @@
         }
       ]
     },
+    "msgSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app": {
+          "$ref": "#/$defs/notEmptyString"
+        },
+        "extension": {
+          "$ref": "#/$defs/alphanumericCharacters"
+        },
+        "subgraph": {
+          "$ref": "#/$defs/alphanumericCharacters"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "extension"
+          ],
+          "not": {
+            "required": [
+              "subgraph"
+            ]
+          }
+        },
+        {
+          "required": [
+            "subgraph"
+          ],
+          "not": {
+            "required": [
+              "extension"
+            ]
+          }
+        }
+      ]
+    },
     "graphNode": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "type",
-        "name",
-        "addon"
+        "name"
       ],
       "properties": {
         "type": {
@@ -273,6 +168,11 @@
         },
         "extension_group": {
           "$ref": "#/$defs/alphanumericCharacters"
+        },
+        "import_uri": {
+          "type": "string",
+          "format": "uri-reference",
+          "minLength": 1
         },
         "property": {
           "type": "object",
@@ -306,7 +206,45 @@
           },
           "additionalProperties": false
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "extension"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "addon"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "subgraph"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "addon"
+              ]
+            }
+          }
+        }
+      ]
     },
     "graphConnection": {
       "type": "object",
@@ -455,6 +393,9 @@
               }
             ]
           }
+        },
+        "result": {
+          "$ref": "#/$defs/msgConversion"
         }
       }
     },
@@ -463,17 +404,30 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "dest"
-        ],
+        "required": [],
         "properties": {
           "name": { // The api name should be alphanumericCharacters.
             "$ref": "#/$defs/alphanumericCharacters"
           },
           "dest": {
-            "$ref": "#/$defs/dataDests"
+            "$ref": "#/$defs/msgDests"
+          },
+          "source": {
+            "$ref": "#/$defs/msgSources"
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "dest"
+            ]
+          },
+          {
+            "required": [
+              "source"
+            ]
+          }
+        ]
       }
     },
     "extensionCmdsInGraph": {
@@ -482,31 +436,45 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "name",
-          "dest"
+          "name"
         ],
         "properties": {
           "name": { // The api name should be alphanumericCharacters.
             "$ref": "#/$defs/alphanumericCharacters"
           },
           "dest": {
-            "$ref": "#/$defs/cmdDests"
+            "$ref": "#/$defs/msgDests"
+          },
+          "source": {
+            "$ref": "#/$defs/msgSources"
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "dest"
+            ]
+          },
+          {
+            "required": [
+              "source"
+            ]
+          }
+        ]
       }
     },
-    "cmdDests": {
+    "msgDests": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/cmdDest"
+        "$ref": "#/$defs/msgDest"
       }
     },
-    "dataDests": {
+    "msgSources": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/dataDest"
+        "$ref": "#/$defs/msgSource"
       }
     },
     "validPropertyObject": {
@@ -740,8 +708,9 @@
                 "type": "boolean",
                 "default": false
               },
-              "source_uri": {
+              "import_uri": {
                 "type": "string",
+                "format": "uri-reference",
                 "minLength": 1
               },
               "nodes": {
@@ -860,7 +829,7 @@
             "oneOf": [
               {
                 "required": [
-                  "source_uri"
+                  "import_uri"
                 ],
                 "not": {
                   "anyOf": [
@@ -890,7 +859,7 @@
               {
                 "not": {
                   "required": [
-                    "source_uri"
+                    "import_uri"
                   ]
                 }
               }

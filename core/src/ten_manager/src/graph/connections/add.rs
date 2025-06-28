@@ -173,7 +173,7 @@ fn check_nodes_exist(
 
 /// Adds a new connection between two extension nodes in the graph.
 #[allow(clippy::too_many_arguments)]
-pub fn graph_add_connection(
+pub async fn graph_add_connection(
     graph: &mut Graph,
     graph_app_base_dir: &Option<String>,
     src_app: Option<String>,
@@ -222,7 +222,8 @@ pub fn graph_add_connection(
             dest_extension: &dest_extension,
             msg_conversion: &msg_conversion,
         },
-    )?;
+    )
+    .await?;
 
     // Create destination object.
     let destination = GraphDestination {
@@ -241,7 +242,7 @@ pub fn graph_add_connection(
 
     // Create a message flow.
     let message_flow =
-        GraphMessageFlow { name: msg_name, dest: vec![destination] };
+        GraphMessageFlow::new(msg_name, vec![destination], vec![]);
 
     // Get or create a connection for the source node and add the message
     // flow.
@@ -277,7 +278,7 @@ pub fn graph_add_connection(
     }
 
     // Validate the updated graph.
-    match graph.validate_and_complete_and_flatten(None) {
+    match graph.validate_and_complete_and_flatten(None).await {
         Ok(_) => Ok(()),
         Err(e) => {
             // Restore the original graph if validation fails.

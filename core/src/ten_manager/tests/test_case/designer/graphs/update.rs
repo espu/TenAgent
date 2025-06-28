@@ -82,7 +82,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 all_pkgs_json,
-            );
+            )
+            .await;
             assert!(inject_ret.is_ok());
         }
 
@@ -115,7 +116,7 @@ mod tests {
             extension_group: None,
             app: None,
             property: None,
-            source_uri: None,
+            import_uri: None,
         }];
 
         // Create a connection with message flow.
@@ -129,7 +130,7 @@ mod tests {
         };
 
         let message_flow =
-            GraphMessageFlow { name: "test_cmd".to_string(), dest: vec![dest] };
+            GraphMessageFlow::new("test_cmd".to_string(), vec![dest], vec![]);
 
         let connection = GraphConnection {
             loc: GraphLoc {
@@ -163,6 +164,7 @@ mod tests {
                 .collect(),
             connections: connections.clone(),
             exposed_messages: vec![],
+            auto_start: None,
         };
 
         // Make the request.
@@ -240,6 +242,7 @@ mod tests {
             nodes: vec![],
             connections: vec![],
             exposed_messages: vec![],
+            auto_start: None,
         };
 
         // Make the request.
@@ -311,7 +314,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 all_pkgs_json,
-            );
+            )
+            .await;
             assert!(inject_ret.is_ok());
         }
 
@@ -344,7 +348,7 @@ mod tests {
             extension_group: None,
             app: Some("http://example.com:8000".to_string()),
             property: None,
-            source_uri: None,
+            import_uri: None,
         }];
         let connections = vec![]; // Empty connections.
 
@@ -366,6 +370,7 @@ mod tests {
                 .collect(),
             connections,
             exposed_messages: vec![],
+            auto_start: None,
         };
 
         // Make the request.

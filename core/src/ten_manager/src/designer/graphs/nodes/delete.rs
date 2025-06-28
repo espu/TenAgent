@@ -29,8 +29,10 @@ pub struct DeleteGraphNodeRequestPayload {
 
     pub name: String,
     pub addon: String,
-    pub extension_group: Option<String>,
     pub app: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extension_group: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -38,7 +40,7 @@ pub struct DeleteGraphNodeResponsePayload {
     pub success: bool,
 }
 
-pub fn graph_delete_extension_node(
+pub async fn graph_delete_extension_node(
     graph: &mut Graph,
     pkg_name: String,
     addon: String,
@@ -140,7 +142,7 @@ pub fn graph_delete_extension_node(
     }
 
     // Validate the graph.
-    match graph.validate_and_complete_and_flatten(None) {
+    match graph.validate_and_complete_and_flatten(None).await {
         Ok(_) => Ok(()),
         Err(e) => {
             // Restore the original graph if validation fails.
@@ -181,7 +183,9 @@ pub async fn delete_graph_node_endpoint(
         request_payload.addon.clone(),
         request_payload.app.clone(),
         request_payload.extension_group.clone(),
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to delete node: {err}"),

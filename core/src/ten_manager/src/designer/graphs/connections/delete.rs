@@ -48,7 +48,7 @@ pub struct DeleteGraphConnectionResponsePayload {
     pub success: bool,
 }
 
-fn graph_delete_connection(
+async fn graph_delete_connection(
     graph: &mut Graph,
     src_app: Option<String>,
     src_extension: String,
@@ -131,7 +131,7 @@ fn graph_delete_connection(
                     }
 
                     // Validate the updated graph.
-                    match graph.validate_and_complete_and_flatten(None) {
+                    match graph.validate_and_complete_and_flatten(None).await {
                         Ok(_) => return Ok(()),
                         Err(e) => {
                             // Restore the original graph if validation fails.
@@ -181,7 +181,9 @@ pub async fn delete_graph_connection_endpoint(
         request_payload.msg_name.clone(),
         request_payload.dest_app.clone(),
         request_payload.dest_extension.clone(),
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to delete connection: {err}"),
@@ -220,10 +222,11 @@ pub async fn delete_graph_connection_endpoint(
             };
 
             // Create the message flow with destination.
-            let message_flow = GraphMessageFlow {
-                name: request_payload.msg_name.clone(),
-                dest: vec![dest_to_remove],
-            };
+            let message_flow = GraphMessageFlow::new(
+                request_payload.msg_name.clone(),
+                vec![dest_to_remove],
+                vec![],
+            );
 
             // Set the appropriate message type field.
             match request_payload.msg_type {

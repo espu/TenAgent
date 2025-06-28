@@ -26,7 +26,7 @@ mod tests {
                     extension_group: Some("some_group".to_string()),
                     app: None,
                     property: None,
-                    source_uri: None,
+                    import_uri: None,
                 },
                 GraphNode {
                     type_: GraphNodeType::Extension,
@@ -35,7 +35,7 @@ mod tests {
                     extension_group: Some("another_group".to_string()),
                     app: None,
                     property: None,
-                    source_uri: None,
+                    import_uri: None,
                 },
             ],
             connections: Some(vec![GraphConnection {
@@ -44,9 +44,9 @@ mod tests {
                     app: None,
                     subgraph: None,
                 },
-                cmd: Some(vec![GraphMessageFlow {
-                    name: "B".to_string(),
-                    dest: vec![GraphDestination {
+                cmd: Some(vec![GraphMessageFlow::new(
+                    "B".to_string(),
+                    vec![GraphDestination {
                         loc: GraphLoc {
                             extension: Some("ext_d".to_string()),
                             subgraph: None,
@@ -54,7 +54,8 @@ mod tests {
                         },
                         msg_conversion: None,
                     }],
-                }]),
+                    vec![],
+                )]),
                 data: None,
                 video_frame: None,
                 audio_frame: None,

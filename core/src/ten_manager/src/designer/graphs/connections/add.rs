@@ -69,10 +69,11 @@ fn create_graph_connection(
     };
 
     // Create message flow
-    let message_flow = GraphMessageFlow {
-        name: request_payload.msg_name.clone(),
-        dest: vec![destination],
-    };
+    let message_flow = GraphMessageFlow::new(
+        request_payload.msg_name.clone(),
+        vec![destination],
+        vec![],
+    );
 
     // Create connection
     let mut connection = GraphConnection {
@@ -140,7 +141,9 @@ pub async fn add_graph_connection_endpoint(
         request_payload.dest_extension.clone(),
         &pkgs_cache,
         request_payload.msg_conversion.clone(),
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to add connection: {e}"),

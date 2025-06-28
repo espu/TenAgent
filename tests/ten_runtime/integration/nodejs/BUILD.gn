@@ -18,6 +18,7 @@ group("nodejs") {
     "send_cmd_nodejs",
     "send_data_nodejs",
     "send_video_frame_nodejs",
+    "set_dest_nodejs",
     "standalone_test_nodejs",
     "standalone_test_nodejs_2",
     "standalone_test_nodejs_3",
@@ -33,5 +34,9 @@ group("nodejs") {
 
   if (ten_enable_go_binding && ten_enable_python_binding) {
     deps += [ "go_app_preload_all_addons_nodejs" ]
+  }
+
+  if (is_debug) {
+    deps += [ "leak_check_nodejs" ]
   }
 }

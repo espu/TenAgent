@@ -28,7 +28,7 @@ mod tests {
             extension_group: extension_group.map(|s| s.to_string()),
             app: app.map(|s| s.to_string()),
             property: None,
-            source_uri: None,
+            import_uri: None,
         }
     }
 
@@ -49,7 +49,7 @@ mod tests {
         };
 
         let message_flow =
-            GraphMessageFlow { name: cmd_name.to_string(), dest: vec![dest] };
+            GraphMessageFlow::new(cmd_name.to_string(), vec![dest], vec![]);
 
         GraphConnection {
             loc: GraphLoc {
@@ -64,8 +64,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_delete_extension_node() {
+    #[tokio::test]
+    async fn test_delete_extension_node() {
         // Create a graph with multiple nodes and connections.
         let mut graph = Graph {
             nodes: vec![
@@ -122,7 +122,8 @@ mod tests {
             "addon1".to_string(),
             Some("app1".to_string()),
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
         assert_eq!(graph.nodes.len(), 3);
         assert_eq!(graph.connections.as_ref().unwrap().len(), 3);
@@ -135,7 +136,8 @@ mod tests {
             "addon1".to_string(),
             Some("app1".to_string()),
             Some("group1".to_string()),
-        );
+        )
+        .await;
         assert!(result.is_ok());
         assert_eq!(graph.nodes.len(), 2);
 
@@ -159,7 +161,8 @@ mod tests {
             "addon3".to_string(),
             Some("app2".to_string()),
             Some("group3".to_string()),
-        );
+        )
+        .await;
         assert!(result.is_ok());
         assert_eq!(graph.nodes.len(), 1);
 
@@ -177,14 +180,15 @@ mod tests {
             "addon2".to_string(),
             Some("app1".to_string()),
             Some("group2".to_string()),
-        );
+        )
+        .await;
         assert!(result.is_ok());
         assert_eq!(graph.nodes.len(), 0);
         assert!(graph.connections.is_none());
     }
 
-    #[test]
-    fn test_delete_extension_node_multiple_message_types() {
+    #[tokio::test]
+    async fn test_delete_extension_node_multiple_message_types() {
         // Create a graph with multiple message types in connections.
         let mut graph = Graph {
             nodes: vec![
@@ -203,9 +207,9 @@ mod tests {
                 extension: Some("ext1".to_string()),
                 subgraph: None,
             },
-            cmd: Some(vec![GraphMessageFlow {
-                name: "cmd1".to_string(),
-                dest: vec![GraphDestination {
+            cmd: Some(vec![GraphMessageFlow::new(
+                "cmd1".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("app1".to_string()),
                         extension: Some("ext2".to_string()),
@@ -213,10 +217,11 @@ mod tests {
                     },
                     msg_conversion: None,
                 }],
-            }]),
-            data: Some(vec![GraphMessageFlow {
-                name: "data1".to_string(),
-                dest: vec![GraphDestination {
+                vec![],
+            )]),
+            data: Some(vec![GraphMessageFlow::new(
+                "data1".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("app1".to_string()),
                         extension: Some("ext2".to_string()),
@@ -224,10 +229,11 @@ mod tests {
                     },
                     msg_conversion: None,
                 }],
-            }]),
-            audio_frame: Some(vec![GraphMessageFlow {
-                name: "audio1".to_string(),
-                dest: vec![GraphDestination {
+                vec![],
+            )]),
+            audio_frame: Some(vec![GraphMessageFlow::new(
+                "audio1".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("app1".to_string()),
                         extension: Some("ext2".to_string()),
@@ -235,10 +241,11 @@ mod tests {
                     },
                     msg_conversion: None,
                 }],
-            }]),
-            video_frame: Some(vec![GraphMessageFlow {
-                name: "video1".to_string(),
-                dest: vec![GraphDestination {
+                vec![],
+            )]),
+            video_frame: Some(vec![GraphMessageFlow::new(
+                "video1".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("app1".to_string()),
                         extension: Some("ext2".to_string()),
@@ -246,7 +253,8 @@ mod tests {
                     },
                     msg_conversion: None,
                 }],
-            }]),
+                vec![],
+            )]),
         };
 
         graph.connections.as_mut().unwrap().push(connection);
@@ -261,7 +269,8 @@ mod tests {
             "addon2".to_string(),
             Some("app1".to_string()),
             None,
-        );
+        )
+        .await;
 
         assert!(result.is_ok());
         assert_eq!(graph.nodes.len(), 1);
