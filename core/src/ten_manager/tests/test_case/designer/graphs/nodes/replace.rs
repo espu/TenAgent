@@ -24,8 +24,9 @@ mod tests {
         home::config::TmanConfig,
         output::cli::TmanOutputCli,
     };
-    use ten_rust::pkg_info::constants::{
-        MANIFEST_JSON_FILENAME, PROPERTY_JSON_FILENAME,
+    use ten_rust::{
+        graph::node::GraphNode,
+        pkg_info::constants::{MANIFEST_JSON_FILENAME, PROPERTY_JSON_FILENAME},
     };
     use uuid::Uuid;
 
@@ -57,7 +58,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 TEST_DIR,
-            );
+            )
+            .await;
         }
 
         let designer_state = Arc::new(designer_state);
@@ -122,7 +124,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 TEST_DIR,
-            );
+            )
+            .await;
         }
 
         // Get an existing graph ID.
@@ -233,7 +236,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 all_pkgs_json_str,
-            );
+            )
+            .await;
             assert!(inject_ret.is_ok());
         }
 
@@ -269,7 +273,7 @@ mod tests {
             let graph_info = graphs_cache.get(&graph_id).unwrap();
 
             // Assuming there's at least one node in the graph.
-            graph_info.graph.nodes.first().unwrap().name.clone()
+            graph_info.graph.nodes.first().unwrap().get_name().to_string()
         };
 
         // Try to replace a node with an invalid property (integer instead of
@@ -394,7 +398,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 all_pkgs_json_str,
-            );
+            )
+            .await;
             assert!(inject_ret.is_ok());
         }
 
@@ -429,7 +434,7 @@ mod tests {
             let graph_info = graphs_cache.get(&graph_id).unwrap();
 
             // Assuming there's at least one node in the graph.
-            graph_info.graph.nodes.first().unwrap().name.clone()
+            graph_info.graph.nodes.first().unwrap().get_name().to_string()
         };
 
         // Try to replace a node with an invalid property (integer instead of
@@ -514,7 +519,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 TEST_DIR,
-            );
+            )
+            .await;
         }
 
         // Get an existing graph ID with a node we can replace.
@@ -549,7 +555,12 @@ mod tests {
 
             // Assuming there's at least one node in the graph.
             let node = graph_info.graph.nodes.first().unwrap();
-            (node.name.clone(), node.app.clone())
+            let app = match node {
+                GraphNode::Extension { content } => content.app.clone(),
+                _ => None,
+            };
+
+            (node.get_name().to_string(), app)
         };
 
         // Store the node details we'll use for replacement.
@@ -591,9 +602,19 @@ mod tests {
             .graph
             .nodes
             .iter()
-            .find(|node| node.name == node_name && node.app == app_uri)
+            .find(|node| match node {
+                GraphNode::Extension { content } => {
+                    content.name == node_name && content.app == app_uri
+                }
+                _ => false,
+            })
             .unwrap();
 
-        assert_eq!(updated_node.addon, Some(new_addon));
+        let updated_node_addon = match updated_node {
+            GraphNode::Extension { content } => content.addon.clone(),
+            _ => panic!("Updated node is not an extension node"),
+        };
+
+        assert_eq!(updated_node_addon, new_addon);
     }
 }

@@ -76,6 +76,7 @@
 #define TEN_STR_PREDEFINED_GRAPH "predefined_graph"
 #define TEN_STR_NODES "nodes"
 #define TEN_STR_CONNECTIONS "connections"
+#define TEN_STR_GRAPH_JSON "graph_json"
 
 #define TEN_STR_PROPERTY_STORE_SCOPE_DELIMITER ":"
 
@@ -139,6 +140,7 @@
 #define TEN_STR_GRAPH "graph"
 #define TEN_STR_GRAPH_NAME "graph_name"
 #define TEN_STR_GRAPH_ID "graph_id"
+#define TEN_STR_IMPORT_URI "import_uri"
 
 #define TEN_STR_CASCADE_CLOSE_UPWARD "cascade_close_upward"
 #define TEN_STR_DUPLICATE "duplicate"

@@ -45,6 +45,48 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_dev_dependencies_normal() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dev_dependencies": [{
+            "type": "system",
+            "name": "googletest",
+            "version": "1.7.0-rc2"
+          }],
+          "api": {}
+        }
+        "#;
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_mixed_dependencies_normal() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dev_dependencies": [{
+            "type": "system",
+            "name": "ten_runtime",
+            "version": "0.6.0"
+          },{
+            "type": "system",
+            "name": "googletest",
+            "version": "1.7.0-rc2"
+          }],
+          "api": {}
+        }
+        "#;
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn test_validate_dependencies_with_path() {
         let manifest = r#"
         {
@@ -318,34 +360,38 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "int8"
-                  },
-                  "b": {
-                    "type": "uint8"
-                  },
-                  "c": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "d": {
-                    "type": "object",
-                    "properties": {
-                      "e": {
-                        "type": "float32"
+                  "properties": {
+                    "a": {
+                      "type": "int8"
+                    },
+                    "b": {
+                      "type": "uint8"
+                    },
+                    "c": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "d": {
+                      "type": "object",
+                      "properties": {
+                        "e": {
+                          "type": "float32"
+                        }
                       }
                     }
                   }
                 },
                 "result": {
                   "property": {
-                    "a": {
-                      "type": "buf"
-                    },
-                    "detail": {
-                      "type": "buf"
+                    "properties": {
+                      "a": {
+                        "type": "buf"
+                      },
+                      "detail": {
+                        "type": "buf"
+                      }
                     }
                   }
                 }
@@ -373,35 +419,39 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "int8"
-                  },
-                  "b": {
-                    "type": "uint8"
-                  },
-                  "c": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "d": {
-                    "type": "object",
-                    "properties": {
-                      "e": {
-                        "type": "float32"
+                  "properties": {
+                    "a": {
+                      "type": "int8"
+                    },
+                    "b": {
+                      "type": "uint8"
+                    },
+                    "c": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "d": {
+                      "type": "object",
+                      "properties": {
+                        "e": {
+                          "type": "float32"
+                        }
                       }
                     }
-                  }
+                  },
+                  "required": ["a","b"]
                 },
-                "required": ["a","b"],
                 "result": {
                   "property": {
-                    "a": {
-                      "type": "buf"
-                    },
-                    "detail": {
-                      "type": "buf"
+                    "properties": {
+                      "a": {
+                        "type": "buf"
+                      },
+                      "detail": {
+                        "type": "buf"
+                      }
                     }
                   }
                 }
@@ -428,38 +478,42 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "int8"
-                  },
-                  "b": {
-                    "type": "uint8"
-                  },
-                  "c": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "d": {
-                    "type": "object",
-                    "properties": {
-                      "e": {
-                        "type": "float32"
+                  "properties": {
+                    "a": {
+                      "type": "int8"
+                    },
+                    "b": {
+                      "type": "uint8"
+                    },
+                    "c": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "d": {
+                      "type": "object",
+                      "properties": {
+                        "e": {
+                          "type": "float32"
+                        }
                       }
                     }
-                  }
+                  },
+                  "required": ["a","b"]
                 },
-                "required": ["a","b"],
                 "result": {
                   "property": {
-                    "a": {
-                      "type": "buf"
+                    "properties": {
+                      "a": {
+                        "type": "buf"
+                      },
+                      "detail": {
+                        "type": "buf"
+                      }
                     },
-                    "detail": {
-                      "type": "buf"
-                    }
-                  },
-                  "required": ["a"]
+                    "required": ["a"]
+                  }
                 }
               }
             ]
@@ -484,39 +538,43 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "int8"
-                  },
-                  "b": {
-                    "type": "uint8"
-                  },
-                  "c": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "d": {
-                    "type": "object",
-                    "properties": {
-                      "e": {
-                        "type": "float32"
-                      },
-                      "f": {
+                  "properties": {
+                    "a": {
+                      "type": "int8"
+                    },
+                    "b": {
+                      "type": "uint8"
+                    },
+                    "c": {
+                      "type": "array",
+                      "items": {
                         "type": "string"
                       }
                     },
-                    "required": ["e"]
-                  }
+                    "d": {
+                      "type": "object",
+                      "properties": {
+                        "e": {
+                          "type": "float32"
+                        },
+                        "f": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["e"]
+                    }
+                  },
+                  "required": ["a","b"]
                 },
-                "required": ["a","b"],
                 "result": {
                   "property": {
-                    "a": {
-                      "type": "buf"
-                    },
-                    "detail": {
-                      "type": "buf"
+                    "properties": {
+                      "a": {
+                        "type": "buf"
+                      },
+                      "detail": {
+                        "type": "buf"
+                      }
                     }
                   }
                 }
@@ -836,10 +894,12 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "int8",
-                    "items": {
-                      "type": "string"
+                  "properties": {
+                    "a": {
+                      "type": "int8",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
@@ -871,11 +931,13 @@ mod tests {
               {
                 "name": "foo",
                 "property": {
-                  "a": {
-                    "type": "string",
-                    "properties": {
-                      "a": {
-                        "type": "string"
+                  "properties": {
+                    "a": {
+                      "type": "string",
+                      "properties": {
+                        "a": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -893,6 +955,171 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("{\"required\":[\"properties\"]} is not allowed for"));
+    }
+
+    #[test]
+    fn test_validate_interface_empty() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": []
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_interface_with_relative_path_import_uri() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {
+                "import_uri": "interface.json"
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_interface_with_absolute_path_import_uri() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {
+                "import_uri": "file:///tmp/interface.json"
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_interface_with_remote_url() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {
+                "import_uri": "https://example.com/interface.json"
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_interface_combined_with_cmd_in() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {
+                "import_uri": "https://example.com/interface.json"
+              }
+            ],
+            "cmd_in": [
+              {
+                "name": "foo",
+                "property": {}
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_interface_with_extra_fields() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {
+                "import_uri": "https://example.com/interface.json",
+                "extra": "extra"
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_err());
+
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Additional properties are not allowed"));
+    }
+
+    #[test]
+    fn test_validate_interface_without_import_uri() {
+        let manifest = r#"
+        {
+          "type": "extension",
+          "name": "default_extension_cpp",
+          "version": "0.1.0",
+          "dependencies": [],
+          "api": {
+            "interface": [
+              {}
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_manifest_json_string(manifest);
+        assert!(result.is_err());
+
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("is a required property"));
     }
 
     #[test]
@@ -1526,15 +1753,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_source_uri_mutual_exclusion_with_nodes() {
-        // Test that source_uri and nodes are mutually exclusive
+    fn test_validate_import_uri_mutual_exclusion_with_nodes() {
+        // Test that import_uri and nodes are mutually exclusive
         let property = r#"
         {
           "ten": {
             "predefined_graphs": [
               {
                 "name": "default",
-                "source_uri": "test_graph.json",
+                "import_uri": "test_graph.json",
                 "nodes": [
                   {
                     "type": "extension",
@@ -1556,15 +1783,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_source_uri_mutual_exclusion_with_connections() {
-        // Test that source_uri and connections are mutually exclusive
+    fn test_validate_import_uri_mutual_exclusion_with_connections() {
+        // Test that import_uri and connections are mutually exclusive
         let property = r#"
         {
           "ten": {
             "predefined_graphs": [
               {
                 "name": "default",
-                "source_uri": "test_graph.json",
+                "import_uri": "test_graph.json",
                 "connections": [
                   {
                     "extension": "test_ext",
@@ -1593,15 +1820,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_source_uri_mutual_exclusion_with_exposed_messages() {
-        // Test that source_uri and exposed_messages are mutually exclusive
+    fn test_validate_import_uri_mutual_exclusion_with_exposed_messages() {
+        // Test that import_uri and exposed_messages are mutually exclusive
         let property = r#"
         {
           "ten": {
             "predefined_graphs": [
               {
                 "name": "default",
-                "source_uri": "test_graph.json",
+                "import_uri": "test_graph.json",
                 "exposed_messages": [
                   {
                     "type": "cmd_in",
@@ -1622,15 +1849,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_source_uri_mutual_exclusion_with_exposed_properties() {
-        // Test that source_uri and exposed_properties are mutually exclusive
+    fn test_validate_import_uri_mutual_exclusion_with_exposed_properties() {
+        // Test that import_uri and exposed_properties are mutually exclusive
         let property = r#"
         {
           "ten": {
             "predefined_graphs": [
               {
                 "name": "default",
-                "source_uri": "test_graph.json",
+                "import_uri": "test_graph.json",
                 "exposed_properties": [
                   {
                     "name": "test_prop",
@@ -1650,15 +1877,15 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_source_uri_without_conflicting_fields_succeeds() {
-        // Test that source_uri alone is valid
+    fn test_validate_import_uri_without_conflicting_fields_succeeds() {
+        // Test that import_uri alone is valid
         let property = r#"
         {
           "ten": {
             "predefined_graphs": [
               {
                 "name": "default",
-                "source_uri": "test_graph.json"
+                "import_uri": "test_graph.json"
               }
             ]
           }
@@ -1670,8 +1897,8 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_graph_without_source_uri_succeeds() {
-        // Test that a graph without source_uri but with other fields is valid
+    fn test_validate_graph_without_import_uri_succeeds() {
+        // Test that a graph without import_uri but with other fields is valid
         let property = r#"
         {
           "ten": {
@@ -1722,5 +1949,604 @@ mod tests {
 
         let result = ten_validate_property_json_string(property);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_graph_with_subgraph_specified_addon() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [
+                  {
+                    "type": "subgraph",
+                    "name": "subgraph_1",
+                    "addon": "subgraph_1",
+                    "graph": {
+                      "import_uri": "graphs/test_graph.json"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        // The subgraph with specified addon is invalid.
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_graph_with_extension_node_without_addon() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [
+                  {
+                    "type": "extension",
+                    "name": "ext_a",
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        // The extension node without addon is invalid.
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_source_extension_subgraph_mutual_exclusion() {
+        // Test that source with both extension and subgraph fields fails
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [{
+                  "type": "extension",
+                  "name": "test_ext",
+                  "addon": "test_addon",
+                  "extension_group": "test_group"
+                }],
+                "connections": [
+                  {
+                    "extension": "test_ext",
+                    "cmd": [
+                      {
+                        "name": "test_cmd",
+                        "source": [
+                          {
+                            "extension": "test_ext",
+                            "subgraph": "test_subgraph"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("oneOf"));
+    }
+
+    #[test]
+    fn test_validate_source_extension_only() {
+        // Test that source with only extension field succeeds
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [{
+                  "type": "extension",
+                  "name": "test_ext",
+                  "addon": "test_addon",
+                  "extension_group": "test_group"
+                }],
+                "connections": [
+                  {
+                    "extension": "test_ext",
+                    "cmd": [
+                      {
+                        "name": "test_cmd",
+                        "source": [
+                          {
+                            "extension": "test_ext"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_source_subgraph_only() {
+        // Test that source with only subgraph field succeeds
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [{
+                  "type": "extension",
+                  "name": "test_ext",
+                  "addon": "test_addon",
+                  "extension_group": "test_group"
+                }],
+                "connections": [
+                  {
+                    "extension": "test_ext",
+                    "cmd": [
+                      {
+                        "name": "test_cmd",
+                        "source": [
+                          {
+                            "subgraph": "test_subgraph"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_source_with_app() {
+        // Test that source with app field succeeds
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [{
+                  "type": "extension",
+                  "name": "test_ext",
+                  "addon": "test_addon",
+                  "extension_group": "test_group"
+                }],
+                "connections": [
+                  {
+                    "extension": "test_ext",
+                    "cmd": [
+                      {
+                        "name": "test_cmd",
+                        "source": [
+                          {
+                            "app": "msgpack://127.0.0.1:8001/",
+                            "extension": "test_ext"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_source_with_invalid_field() {
+        // Test that source with invalid additional field fails
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [
+              {
+                "name": "default",
+                "nodes": [{
+                  "type": "extension",
+                  "name": "test_ext",
+                  "addon": "test_addon",
+                  "extension_group": "test_group"
+                }],
+                "connections": [
+                  {
+                    "extension": "test_ext",
+                    "cmd": [
+                      {
+                        "name": "test_cmd",
+                        "source": [
+                          {
+                            "extension": "test_ext",
+                            "invalid_field": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+        "#;
+
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("Additional properties are not allowed"));
+    }
+
+    #[test]
+    fn test_validate_msg_dest_extension_with_app() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "dest": [{
+                    "extension": "target_ext",
+                    "app": "test_app"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_dest_extension_with_msg_conversion() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "dest": [{
+                    "extension": "target_ext",
+                    "msg_conversion": {
+                      "type": "per_property",
+                      "rules": [{
+                        "path": "data",
+                        "conversion_mode": "fixed_value",
+                        "value": "test"
+                      }]
+                    }
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_dest_subgraph() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "dest": [{
+                    "subgraph": "target_subgraph"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_dest_selector() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "dest": [{
+                    "selector": "target_selector"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_dest_invalid_combination() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "dest": [{
+                    "extension": "target_ext",
+                    "subgraph": "target_subgraph"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_msg_source_extension_with_app() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "source": [{
+                    "extension": "source_ext",
+                    "app": "test_app"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_source_subgraph() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "source": [{
+                    "subgraph": "source_subgraph"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_msg_source_selector() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "connections": [{
+                "extension": "test_ext",
+                "cmd": [{
+                  "name": "test_cmd",
+                  "source": [{
+                    "selector": "source_selector"
+                  }]
+                }]
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_graph_node_extension() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "extension",
+                "name": "test_ext",
+                "addon": "test_addon",
+                "extension_group": "test_group",
+                "app": "test_app",
+                "property": {
+                  "key1": "value1"
+                }
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_graph_node_subgraph() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "subgraph",
+                "name": "test_subgraph",
+                "graph": {
+                  "import_uri": "test.json"
+                },
+                "property": {
+                  "key1": "value1"
+                }
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_graph_node_selector() {
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "selector",
+                "name": "test_selector",
+                "selector": {
+                  "extension": {
+                    "type": "regex",
+                    "pattern": "test.*"
+                  }
+                }
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_graph_node_extension_missing_required() {
+        // missing addon
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "extension",
+                "name": "test_ext",
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_graph_node_subgraph_missing_required() {
+        // missing graph
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "subgraph",
+                "name": "test_subgraph"
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_graph_node_selector_missing_required() {
+        // missing selector
+        let property = r#"
+        {
+          "ten": {
+            "predefined_graphs": [{
+              "name": "test",
+              "nodes": [{
+                "type": "selector",
+                "name": "test_selector"
+              }]
+            }]
+          }
+        }
+        "#;
+        let result = ten_validate_property_json_string(property);
+        assert!(result.is_err());
     }
 }

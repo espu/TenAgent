@@ -6,15 +6,15 @@
 //
 pub mod _0_8_compatible;
 pub mod base_dir_pkg_info;
-mod bindings;
+pub mod bindings;
 pub mod constants;
 pub mod crypto;
 pub mod env;
-pub mod fs;
 pub mod graph;
 pub mod json;
 pub mod json_schema;
 pub mod pkg_info;
+pub mod utils;
 
 #[cfg(feature = "service-hub")]
 pub mod service_hub;

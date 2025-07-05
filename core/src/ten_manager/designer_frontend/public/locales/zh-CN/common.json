@@ -1,5 +1,5 @@
 {
-  "tenFramework": "TEN 框架",
+  "tenFramework": "TEN framework",
   "ten": "TEN",
   "header": {
     "title": "Ten 管理器",
@@ -53,6 +53,9 @@
       "startRTCInteraction": "与 TEN AI Agent 对话",
       "configTrulienceAvatar": "配置 Trulience 虚拟人",
       "about": "关于扩展"
+    },
+    "menuTenAgentTools": {
+      "title": "TEN Agent 工具"
     },
     "language": {
       "title": "语言",
@@ -278,7 +281,8 @@
     "selectVersion": "选择版本",
     "versionLatest": "最新",
     "localAddonTip": "(本地)",
-    "tags": "标签"
+    "tags": "标签",
+    "identifier": "标识符"
   },
   "rtcInteraction": {
     "title": "实时对话式 AI Agent"

@@ -1,5 +1,5 @@
 {
-  "name": "ten-default-app",
+  "name": "ten-test",
   "version": "1.0.0",
   "main": "./bin/start.js",
   "type": "module",
@@ -7,7 +7,7 @@
     "@types/chai": "^5.2.2",
     "@types/mocha": "^10.0.10",
     "chai": "^5.2.0",
-    "mocha": "^11.4.0",
+    "mocha": "^11.7.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },

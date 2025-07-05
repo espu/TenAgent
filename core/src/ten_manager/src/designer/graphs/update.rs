@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use ten_rust::graph::node::{GraphNode, GraphNodeType};
+use ten_rust::graph::node::GraphNode;
 use ten_rust::graph::{connection::GraphConnection, GraphExposedMessage};
 use uuid::Uuid;
 
@@ -35,15 +35,13 @@ pub struct GraphNodeForUpdate {
 
 impl GraphNodeForUpdate {
     fn to_graph_node(&self) -> GraphNode {
-        GraphNode {
-            type_: GraphNodeType::Extension,
-            name: self.name.clone(),
-            addon: Some(self.addon.clone()),
-            extension_group: self.extension_group.clone(),
-            app: self.app.clone(),
-            property: self.property.clone(),
-            source_uri: None,
-        }
+        GraphNode::new_extension_node(
+            self.name.clone(),
+            self.addon.clone(),
+            self.extension_group.clone(),
+            self.app.clone(),
+            self.property.clone(),
+        )
     }
 }
 
@@ -55,6 +53,9 @@ pub struct UpdateGraphRequestPayload {
 
     #[serde(default)]
     pub exposed_messages: Vec<GraphExposedMessage>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_start: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -147,6 +148,7 @@ pub async fn update_graph_endpoint(
         &request_payload.connections,
         &request_payload.exposed_messages,
         &[],
+        request_payload.auto_start,
     ) {
         Ok(_) => (),
         Err(err) => {

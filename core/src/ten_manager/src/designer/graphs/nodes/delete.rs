@@ -11,7 +11,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use ten_rust::graph::{node::GraphNodeType, Graph};
+use ten_rust::graph::{node::GraphNode, Graph};
 
 use crate::{
     designer::{
@@ -29,8 +29,10 @@ pub struct DeleteGraphNodeRequestPayload {
 
     pub name: String,
     pub addon: String,
-    pub extension_group: Option<String>,
     pub app: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extension_group: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -38,7 +40,7 @@ pub struct DeleteGraphNodeResponsePayload {
     pub success: bool,
 }
 
-pub fn graph_delete_extension_node(
+pub async fn graph_delete_extension_node(
     graph: &mut Graph,
     pkg_name: String,
     addon: String,
@@ -51,11 +53,15 @@ pub fn graph_delete_extension_node(
     // Find and remove the matching node.
     let original_nodes_len = graph.nodes.len();
     graph.nodes.retain(|node| {
-        !(node.type_ == GraphNodeType::Extension
-            && node.name == pkg_name
-            && node.addon == Some(addon.clone())
-            && node.app == app
-            && node.extension_group == extension_group)
+        let extension_node = match node {
+            GraphNode::Extension { content } => content,
+            _ => return true, // Keep other node types.
+        };
+
+        !(extension_node.name == pkg_name
+            && extension_node.addon == addon
+            && extension_node.app == app
+            && extension_node.extension_group == extension_group)
     });
 
     // If no node was removed, return early.
@@ -140,7 +146,7 @@ pub fn graph_delete_extension_node(
     }
 
     // Validate the graph.
-    match graph.validate_and_complete_and_flatten(None) {
+    match graph.validate_and_complete_and_flatten(None).await {
         Ok(_) => Ok(()),
         Err(e) => {
             // Restore the original graph if validation fails.
@@ -181,7 +187,9 @@ pub async fn delete_graph_node_endpoint(
         request_payload.addon.clone(),
         request_payload.app.clone(),
         request_payload.extension_group.clone(),
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to delete node: {err}"),

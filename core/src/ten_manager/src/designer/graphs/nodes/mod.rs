@@ -17,10 +17,10 @@ use serde::{Deserialize, Serialize};
 
 use ten_rust::base_dir_pkg_info::PkgsInfoInApp;
 use ten_rust::graph::graph_info::GraphInfo;
-use ten_rust::graph::node::{GraphNode, GraphNodeType};
+use ten_rust::graph::node::GraphNode;
 use ten_rust::pkg_info::manifest::api::ManifestApiMsg;
 use ten_rust::pkg_info::manifest::api::{
-    ManifestApiCmdResult, ManifestApiPropertyAttributes,
+    ManifestApiCmdResult, ManifestApiProperty, ManifestApiPropertyAttributes,
 };
 use ten_rust::pkg_info::value_type::ValueType;
 use uuid::Uuid;
@@ -29,9 +29,52 @@ use crate::graph::update_graph_node_all_fields;
 use crate::pkg_info::belonging_pkg_info_find_by_graph_info_mut;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct DesignerApiProperty {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<HashMap<String, DesignerPropertyAttributes>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<Vec<String>>,
+}
+
+impl From<ManifestApiProperty> for DesignerApiProperty {
+    fn from(manifest_property: ManifestApiProperty) -> Self {
+        let properties_map = manifest_property.properties().map(|properties| {
+            properties
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone().into()))
+                .collect()
+        });
+
+        DesignerApiProperty {
+            properties: properties_map,
+            required: manifest_property
+                .required
+                .as_ref()
+                .filter(|req| !req.is_empty())
+                .cloned(),
+        }
+    }
+}
+
+impl DesignerApiProperty {
+    pub fn len(&self) -> usize {
+        self.properties.as_ref().map_or(0, |p| p.len())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn get(&self, key: &str) -> Option<&DesignerPropertyAttributes> {
+        self.properties.as_ref()?.get(key)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct DesignerApi {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub property: Option<HashMap<String, DesignerPropertyAttributes>>,
+    pub property: Option<DesignerApiProperty>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cmd_in: Option<Vec<DesignerApiMsg>>,
@@ -89,24 +132,12 @@ impl From<ManifestApiPropertyAttributes> for DesignerPropertyAttributes {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DesignerCmdResult {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub property: Option<HashMap<String, DesignerPropertyAttributes>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub required: Option<Vec<String>>,
+    pub property: Option<DesignerApiProperty>,
 }
 
 impl From<ManifestApiCmdResult> for DesignerCmdResult {
     fn from(cmd_result: ManifestApiCmdResult) -> Self {
-        DesignerCmdResult {
-            property: cmd_result.property.map(|prop| {
-                prop.into_iter().map(|(k, v)| (k, v.into())).collect()
-            }),
-            required: cmd_result
-                .required
-                .as_ref()
-                .filter(|req| !req.is_empty())
-                .cloned(),
-        }
+        DesignerCmdResult { property: cmd_result.property.map(Into::into) }
     }
 }
 
@@ -115,10 +146,7 @@ pub struct DesignerApiMsg {
     pub name: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub property: Option<HashMap<String, DesignerPropertyAttributes>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub required: Option<Vec<String>>,
+    pub property: Option<DesignerApiProperty>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<DesignerCmdResult>,
@@ -132,23 +160,15 @@ impl From<ManifestApiMsg> for DesignerApiMsg {
                 .property
                 .as_ref()
                 .filter(|p| !p.is_empty())
-                .map(|p| {
-                    p.iter()
-                        .map(|(k, v)| (k.clone(), v.clone().into()))
-                        .collect()
-                }),
-            required: api_cmd_like
-                .required
-                .as_ref()
-                .filter(|req| !req.is_empty())
-                .cloned(),
+                .cloned()
+                .map(Into::into),
             result: api_cmd_like.result.as_ref().cloned().map(Into::into),
         }
     }
 }
 
 /// Retrieves all extension nodes from a specified graph.
-pub fn get_extension_nodes_in_graph<'a>(
+pub fn get_nodes_in_graph<'a>(
     graph_id: &Uuid,
     graphs_cache: &'a HashMap<Uuid, GraphInfo>,
 ) -> Result<&'a Vec<GraphNode>> {
@@ -185,15 +205,13 @@ pub fn update_graph_node_in_property_all_fields(
         belonging_pkg_info_find_by_graph_info_mut(pkgs_cache, graph_info)
     {
         // Create the graph node.
-        let new_node = GraphNode {
-            type_: GraphNodeType::Extension,
-            name: node_name.to_string(),
-            addon: Some(addon_name.to_string()),
-            extension_group: extension_group_name.clone(),
-            app: app_uri.clone(),
-            property: property.clone(),
-            source_uri: None,
-        };
+        let new_node = GraphNode::new_extension_node(
+            node_name.to_string(),
+            addon_name.to_string(),
+            extension_group_name.clone(),
+            app_uri.clone(),
+            property.clone(),
+        );
 
         // Update property.json file with the graph node.
         if let Some(property) = &mut pkg_info.property {

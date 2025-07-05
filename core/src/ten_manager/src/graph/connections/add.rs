@@ -15,6 +15,7 @@ use ten_rust::{
             GraphConnection, GraphDestination, GraphLoc, GraphMessageFlow,
         },
         msg_conversion::MsgAndResultConversion,
+        node::GraphNode,
         Graph,
     },
     pkg_info::message::MsgType,
@@ -139,10 +140,12 @@ fn check_nodes_exist(
     dest_extension: &str,
 ) -> Result<()> {
     // Validate that source node exists.
-    let src_node_exists = graph
-        .nodes
-        .iter()
-        .any(|node| node.name == src_extension && node.app == *src_app);
+    let src_node_exists = graph.nodes.iter().any(|node| match node {
+        GraphNode::Extension { content } => {
+            content.name == src_extension && content.app == *src_app
+        }
+        _ => false,
+    });
 
     if !src_node_exists {
         return Err(anyhow::anyhow!(
@@ -154,10 +157,12 @@ fn check_nodes_exist(
     }
 
     // Validate that destination node exists.
-    let dest_node_exists = graph
-        .nodes
-        .iter()
-        .any(|node| node.name == dest_extension && node.app == *dest_app);
+    let dest_node_exists = graph.nodes.iter().any(|node| match node {
+        GraphNode::Extension { content } => {
+            content.name == dest_extension && content.app == *dest_app
+        }
+        _ => false,
+    });
 
     if !dest_node_exists {
         return Err(anyhow::anyhow!(
@@ -173,7 +178,7 @@ fn check_nodes_exist(
 
 /// Adds a new connection between two extension nodes in the graph.
 #[allow(clippy::too_many_arguments)]
-pub fn graph_add_connection(
+pub async fn graph_add_connection(
     graph: &mut Graph,
     graph_app_base_dir: &Option<String>,
     src_app: Option<String>,
@@ -222,7 +227,8 @@ pub fn graph_add_connection(
             dest_extension: &dest_extension,
             msg_conversion: &msg_conversion,
         },
-    )?;
+    )
+    .await?;
 
     // Create destination object.
     let destination = GraphDestination {
@@ -230,6 +236,7 @@ pub fn graph_add_connection(
             app: dest_app,
             extension: Some(dest_extension),
             subgraph: None,
+            selector: None,
         },
         msg_conversion,
     };
@@ -241,7 +248,7 @@ pub fn graph_add_connection(
 
     // Create a message flow.
     let message_flow =
-        GraphMessageFlow { name: msg_name, dest: vec![destination] };
+        GraphMessageFlow::new(msg_name, vec![destination], vec![]);
 
     // Get or create a connection for the source node and add the message
     // flow.
@@ -262,6 +269,7 @@ pub fn graph_add_connection(
                     app: src_app.clone(),
                     extension: Some(src_extension),
                     subgraph: None,
+                    selector: None,
                 },
                 cmd: None,
                 data: None,
@@ -277,7 +285,7 @@ pub fn graph_add_connection(
     }
 
     // Validate the updated graph.
-    match graph.validate_and_complete_and_flatten(None) {
+    match graph.validate_and_complete_and_flatten(None).await {
         Ok(_) => Ok(()),
         Err(e) => {
             // Restore the original graph if validation fails.
