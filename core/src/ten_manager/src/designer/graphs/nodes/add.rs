@@ -33,8 +33,10 @@ pub struct AddGraphNodeRequestPayload {
 
     pub name: String,
     pub addon: String,
-    pub extension_group: Option<String>,
     pub app: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extension_group: Option<String>,
 
     pub property: Option<serde_json::Value>,
 }
@@ -84,13 +86,15 @@ pub async fn add_graph_node_endpoint(
     }
 
     if let Err(e) = graph_add_extension_node(
-        &mut graph_info.graph,
+        graph_info.graph.graph_mut(),
         &request_payload.name,
         &request_payload.addon,
         &request_payload.app,
         &request_payload.extension_group,
         &request_payload.property,
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to add extension node: {e}"),

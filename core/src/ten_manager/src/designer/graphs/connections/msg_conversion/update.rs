@@ -58,7 +58,7 @@ pub struct UpdateGraphConnectionMsgConversionResponsePayload {
 }
 
 // Update the GraphInfo structure.
-fn update_graph_info(
+async fn update_graph_info(
     graph_info: &mut GraphInfo,
     request_payload: &web::Json<
         UpdateGraphConnectionMsgConversionRequestPayload,
@@ -68,7 +68,7 @@ fn update_graph_info(
     let original_graph = graph_info.graph.clone();
 
     // First check if connections exist in the graph.
-    if let Some(connections) = &mut graph_info.graph.connections {
+    if let Some(connections) = &mut graph_info.graph.connections_mut() {
         // Try to find the matching connection based on app and extension.
         for connection in connections.iter_mut() {
             if connection.loc.app == request_payload.src_app
@@ -114,7 +114,7 @@ fn update_graph_info(
     }
 
     // Validate the updated graph.
-    match graph_info.graph.validate_and_complete_and_flatten(None) {
+    match graph_info.graph.validate_and_complete_and_flatten(None).await {
         Ok(_) => Ok(()),
         Err(e) => {
             // Restore the original graph if validation fails.
@@ -143,6 +143,7 @@ fn update_property_all_fields(
                     app: request_payload.src_app.clone(),
                     extension: Some(request_payload.src_extension.clone()),
                     subgraph: None,
+                    selector: None,
                 },
                 cmd: None,
                 data: None,
@@ -156,15 +157,17 @@ fn update_property_all_fields(
                     app: request_payload.dest_app.clone(),
                     extension: Some(request_payload.dest_extension.clone()),
                     subgraph: None,
+                    selector: None,
                 },
                 msg_conversion: request_payload.msg_conversion.clone(),
             };
 
             // Create the message flow.
-            let message_flow = GraphMessageFlow {
-                name: request_payload.msg_name.clone(),
-                dest: vec![destination],
-            };
+            let message_flow = GraphMessageFlow::new(
+                request_payload.msg_name.clone(),
+                vec![destination],
+                vec![],
+            );
 
             // Set the appropriate message type field.
             match request_payload.msg_type {
@@ -234,7 +237,7 @@ pub async fn update_graph_connection_msg_conversion_endpoint(
     // Validate connection schema first.
     if let Err(e) = validate_connection_schema(
         &pkgs_cache,
-        &mut graph_info.graph,
+        graph_info.graph.graph_mut(),
         &graph_info.app_base_dir,
         &MsgConversionValidateInfo {
             src_app: &request_payload.src_app,
@@ -245,7 +248,9 @@ pub async fn update_graph_connection_msg_conversion_endpoint(
             dest_extension: &request_payload.dest_extension,
             msg_conversion: &request_payload.msg_conversion,
         },
-    ) {
+    )
+    .await
+    {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to validate connection schema: {e}"),
@@ -254,7 +259,7 @@ pub async fn update_graph_connection_msg_conversion_endpoint(
         return Ok(HttpResponse::BadRequest().json(error_response));
     }
 
-    if let Err(e) = update_graph_info(graph_info, &request_payload) {
+    if let Err(e) = update_graph_info(graph_info, &request_payload).await {
         let error_response = ErrorResponse {
             status: Status::Fail,
             message: format!("Failed to update graph info: {e}"),

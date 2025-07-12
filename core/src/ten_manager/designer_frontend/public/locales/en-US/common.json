@@ -54,6 +54,9 @@
       "configTrulienceAvatar": "Configure Trulience Avatar",
       "about": "About Extensions"
     },
+    "menuTenAgentTools": {
+      "title": "TEN Agent Tools"
+    },
     "language": {
       "title": "Language",
       "enUS": "English",
@@ -278,7 +281,8 @@
     "selectVersion": "Select a version",
     "versionLatest": "Latest",
     "localAddonTip": "(local)",
-    "tags": "Tags"
+    "tags": "Tags",
+    "identifier": "Identifier"
   },
   "rtcInteraction": {
     "title": "Realtime Voice AI Agent"

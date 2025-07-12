@@ -56,18 +56,21 @@ mod tests {
                 app: Some("http://example.com:8000".to_string()),
                 extension: Some("extension_1".to_string()),
                 subgraph: None,
+                selector: None,
             },
-            cmd: Some(vec![GraphMessageFlow {
-                name: "new_cmd1".to_string(),
-                dest: vec![GraphDestination {
+            cmd: Some(vec![GraphMessageFlow::new(
+                "new_cmd1".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("http://example.com:8000".to_string()),
                         extension: Some("extension_2".to_string()),
                         subgraph: None,
+                        selector: None,
                     },
                     msg_conversion: None,
                 }],
-            }]),
+                vec![],
+            )]),
             data: None,
             audio_frame: None,
             video_frame: None,
@@ -78,18 +81,21 @@ mod tests {
                 app: Some("http://example.com:8000".to_string()),
                 extension: Some("extension_1".to_string()),
                 subgraph: None,
+                selector: None,
             },
-            cmd: Some(vec![GraphMessageFlow {
-                name: "new_cmd2".to_string(),
-                dest: vec![GraphDestination {
+            cmd: Some(vec![GraphMessageFlow::new(
+                "new_cmd2".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("http://example.com:8000".to_string()),
                         extension: Some("extension_3".to_string()),
                         subgraph: None,
+                        selector: None,
                     },
                     msg_conversion: None,
                 }],
-            }]),
+                vec![],
+            )]),
             data: None,
             audio_frame: None,
             video_frame: None,
@@ -125,8 +131,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_add_connection_2() {
+    #[tokio::test]
+    async fn test_add_connection_2() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -134,7 +140,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -167,7 +174,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
 
         assert!(result.is_ok());
         assert!(graph.connections.is_some());
@@ -194,8 +202,8 @@ mod tests {
         assert_eq!(dest.loc.extension, Some("ext2".to_string()));
     }
 
-    #[test]
-    fn test_add_connection_nonexistent_source() {
+    #[tokio::test]
+    async fn test_add_connection_nonexistent_source() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -203,7 +211,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with only one node.
         let mut graph = Graph {
@@ -229,14 +238,15 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
 
         assert!(result.is_err());
         assert!(graph.connections.is_none()); // Graph should remain unchanged.
     }
 
-    #[test]
-    fn test_add_connection_nonexistent_destination() {
+    #[tokio::test]
+    async fn test_add_connection_nonexistent_destination() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -244,7 +254,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with only one node.
         let mut graph = Graph {
@@ -270,14 +281,15 @@ mod tests {
             "ext2".to_string(), // This node doesn't exist.
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
 
         assert!(result.is_err());
         assert!(graph.connections.is_none()); // Graph should remain unchanged.
     }
 
-    #[test]
-    fn test_add_connection_to_existing_flow() {
+    #[tokio::test]
+    async fn test_add_connection_to_existing_flow() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -285,7 +297,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with three nodes.
         let mut graph = Graph {
@@ -323,7 +336,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Add second connection with same source and message name but different
@@ -339,7 +353,8 @@ mod tests {
             "ext3".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         println!("result: {result:?}");
         assert!(result.is_ok());
 
@@ -367,8 +382,8 @@ mod tests {
         assert_eq!(flow.dest[0].loc.extension, Some("ext3".to_string()));
     }
 
-    #[test]
-    fn test_add_different_message_types() {
+    #[tokio::test]
+    async fn test_add_different_message_types() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -376,7 +391,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -409,7 +425,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         let result = graph_add_connection(
@@ -423,7 +440,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         let result = graph_add_connection(
@@ -437,7 +455,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         let result = graph_add_connection(
@@ -451,7 +470,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Verify that we have one connection with different message flows.
@@ -468,8 +488,8 @@ mod tests {
         assert_eq!(connection.video_frame.as_ref().unwrap()[0].name, "video1");
     }
 
-    #[test]
-    fn test_add_duplicate_connection() {
+    #[tokio::test]
+    async fn test_add_duplicate_connection() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -477,7 +497,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -510,7 +531,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Try to add the same connection again.
@@ -525,7 +547,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
 
         // This should fail because the connection already exists.
         assert!(result.is_err());
@@ -546,8 +569,8 @@ mod tests {
         assert_eq!(flow.dest.len(), 1);
     }
 
-    #[test]
-    fn test_schema_compatibility_check() {
+    #[tokio::test]
+    async fn test_schema_compatibility_check() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -555,7 +578,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with three nodes.
         let mut graph = Graph {
@@ -598,7 +622,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Test connecting ext1 to ext3 with compatible schema - should succeed.
@@ -613,7 +638,8 @@ mod tests {
             "ext3".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Test connecting ext1 to ext3 with incompatible schema - should fail.
@@ -628,7 +654,8 @@ mod tests {
             "ext3".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -647,7 +674,8 @@ mod tests {
             "ext4".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_ok());
 
         // Test connecting ext1 to ext4 with incompatible schema - should fail.
@@ -662,7 +690,8 @@ mod tests {
             "ext4".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         println!("result: {result:?}");
         assert!(result.is_err());
         assert!(result
@@ -683,7 +712,8 @@ mod tests {
             "ext3".to_string(),
             &pkgs_cache,
             None,
-        );
+        )
+        .await;
         assert!(result.is_err());
         assert!(result
             .unwrap_err()

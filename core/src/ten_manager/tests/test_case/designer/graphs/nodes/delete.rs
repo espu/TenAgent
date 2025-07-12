@@ -9,8 +9,9 @@ mod tests {
     use std::{collections::HashMap, sync::Arc};
 
     use actix_web::{test, web, App};
-    use ten_rust::pkg_info::constants::{
-        MANIFEST_JSON_FILENAME, PROPERTY_JSON_FILENAME,
+    use ten_rust::{
+        graph::node::GraphNode,
+        pkg_info::constants::{MANIFEST_JSON_FILENAME, PROPERTY_JSON_FILENAME},
     };
     use uuid::Uuid;
 
@@ -60,7 +61,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 TEST_DIR,
-            );
+            )
+            .await;
         }
 
         let designer_state = Arc::new(designer_state);
@@ -123,7 +125,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 TEST_DIR,
-            );
+            )
+            .await;
         }
 
         let graph_id_clone;
@@ -228,7 +231,8 @@ mod tests {
                 &mut pkgs_cache,
                 &mut graphs_cache,
                 all_pkgs_json,
-            );
+            )
+            .await;
             assert!(inject_ret.is_ok());
         }
 
@@ -341,10 +345,14 @@ mod tests {
             graphs_cache_find_by_id(&graphs_cache, &graph_id_clone)
         {
             // Check if the node is gone.
-            let node_exists = graph_info.graph.nodes.iter().any(|node| {
-                node.name == "test_delete_node"
-                    && node.addon == Some("test_addon".to_string())
-            });
+            let node_exists =
+                graph_info.graph.nodes().iter().any(|node| match node {
+                    GraphNode::Extension { content } => {
+                        content.name == "test_delete_node"
+                            && content.addon == "test_addon"
+                    }
+                    _ => false,
+                });
             assert!(!node_exists, "Node should have been deleted");
         } else {
             panic!("Graph 'default_with_app_uri' not found");

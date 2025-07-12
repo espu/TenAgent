@@ -52,8 +52,8 @@ static ten_py_extension_tester_t *ten_py_extension_tester_create_internal(
   return py_extension_tester;
 }
 
-static void proxy_on_start(ten_extension_tester_t *extension_tester,
-                           ten_env_tester_t *ten_env_tester) {
+static void proxy_on_init(ten_extension_tester_t *extension_tester,
+                          ten_env_tester_t *ten_env_tester) {
   TEN_ASSERT(extension_tester, "Invalid argument.");
   TEN_ASSERT(ten_extension_tester_check_integrity(extension_tester, true),
              "Invalid argument.");
@@ -81,6 +81,43 @@ static void proxy_on_start(ten_extension_tester_t *extension_tester,
   py_ten_env_tester->c_ten_env_tester_proxy =
       ten_env_tester_proxy_create(ten_env_tester, NULL);
   TEN_ASSERT(py_ten_env_tester->c_ten_env_tester_proxy, "Should not happen.");
+
+  PyObject *py_res =
+      PyObject_CallMethod((PyObject *)py_extension_tester, "_proxy_on_init",
+                          "O", py_ten_env_tester->actual_py_ten_env_tester);
+  Py_XDECREF(py_res);
+
+  bool err_occurred = ten_py_check_and_clear_py_error();
+  TEN_ASSERT(!err_occurred, "Should not happen.");
+
+  ten_py_gil_state_release_internal(prev_state);
+}
+
+static void proxy_on_start(ten_extension_tester_t *extension_tester,
+                           ten_env_tester_t *ten_env_tester) {
+  TEN_ASSERT(extension_tester, "Invalid argument.");
+  TEN_ASSERT(ten_extension_tester_check_integrity(extension_tester, true),
+             "Invalid argument.");
+
+  TEN_ASSERT(ten_env_tester, "Invalid argument.");
+  TEN_ASSERT(ten_env_tester_check_integrity(ten_env_tester, true),
+             "Invalid argument.");
+
+  // About to call the Python function, so it's necessary to ensure that the GIL
+  // has been acquired.
+  PyGILState_STATE prev_state = ten_py_gil_state_ensure_internal();
+
+  ten_py_extension_tester_t *py_extension_tester =
+      (ten_py_extension_tester_t *)ten_binding_handle_get_me_in_target_lang(
+          (ten_binding_handle_t *)extension_tester);
+  TEN_ASSERT(py_extension_tester &&
+                 ten_py_extension_tester_check_integrity(py_extension_tester),
+             "Invalid argument.");
+
+  ten_py_ten_env_tester_t *py_ten_env_tester =
+      (ten_py_ten_env_tester_t *)py_extension_tester->py_ten_env_tester;
+  TEN_ASSERT(py_ten_env_tester, "Should not happen.");
+  TEN_ASSERT(py_ten_env_tester->actual_py_ten_env_tester, "Should not happen.");
 
   PyObject *py_res =
       PyObject_CallMethod((PyObject *)py_extension_tester, "_proxy_on_start",
@@ -361,8 +398,8 @@ static ten_py_extension_tester_t *ten_py_extension_tester_init(
              "Invalid argument.");
 
   py_extension_tester->c_extension_tester = ten_extension_tester_create(
-      NULL, proxy_on_start, proxy_on_stop, proxy_on_deinit, proxy_on_cmd,
-      proxy_on_data, proxy_on_audio_frame, proxy_on_video_frame);
+      proxy_on_init, proxy_on_start, proxy_on_stop, proxy_on_deinit,
+      proxy_on_cmd, proxy_on_data, proxy_on_audio_frame, proxy_on_video_frame);
 
   ten_binding_handle_set_me_in_target_lang(
       &py_extension_tester->c_extension_tester->binding_handle,
@@ -420,6 +457,32 @@ static PyObject *ten_py_extension_tester_set_test_mode_single(PyObject *self,
   Py_RETURN_NONE;
 }
 
+static PyObject *ten_py_extension_tester_set_timeout(PyObject *self,
+                                                     PyObject *args) {
+  ten_py_extension_tester_t *py_extension_tester =
+      (ten_py_extension_tester_t *)self;
+  TEN_ASSERT(py_extension_tester &&
+                 ten_py_extension_tester_check_integrity(py_extension_tester),
+             "Invalid argument.");
+
+  if (PyTuple_GET_SIZE(args) != 1) {
+    return ten_py_raise_py_value_error_exception(
+        "Invalid argument count when extension_tester.set_timeout.");
+  }
+
+  uint64_t timeout_us = 0;
+  if (!PyArg_ParseTuple(args, "K", &timeout_us)) {
+    return ten_py_raise_py_value_error_exception(
+        "Failed to parse arguments when "
+        "extension_tester.set_timeout.");
+  }
+
+  ten_extension_tester_set_timeout(py_extension_tester->c_extension_tester,
+                                   timeout_us);
+
+  Py_RETURN_NONE;
+}
+
 static PyObject *ten_py_extension_tester_run(PyObject *self, PyObject *args) {
   ten_py_extension_tester_t *py_extension_tester =
       (ten_py_extension_tester_t *)self;
@@ -432,20 +495,27 @@ static PyObject *ten_py_extension_tester_run(PyObject *self, PyObject *args) {
 
   PyThreadState *saved_py_thread_state = PyEval_SaveThread();
 
+  ten_error_t err;
+  TEN_ERROR_INIT(err);
+
+  ten_py_error_t *py_error = NULL;
+
   // This ia a blocking operation.
-  bool rc = ten_extension_tester_run(py_extension_tester->c_extension_tester);
+  bool rc =
+      ten_extension_tester_run(py_extension_tester->c_extension_tester, &err);
+  if (!rc) {
+    py_error = ten_py_error_wrap(&err);
+  }
 
   PyEval_RestoreThread(saved_py_thread_state);
 
   TEN_LOGI("ten_py_extension_tester_run done: %d", rc);
 
-  if (!rc) {
-    return ten_py_raise_py_runtime_error_exception(
-        "Failed to run ten_extension_tester.");
-  }
+  ten_error_deinit(&err);
 
-  bool err_occurred = ten_py_check_and_clear_py_error();
-  TEN_ASSERT(!err_occurred, "Should not happen.");
+  if (py_error) {
+    return (PyObject *)py_error;
+  }
 
   Py_RETURN_NONE;
 }
@@ -454,6 +524,7 @@ PyTypeObject *ten_py_extension_tester_py_type(void) {
   static PyMethodDef py_methods[] = {
       {"set_test_mode_single", ten_py_extension_tester_set_test_mode_single,
        METH_VARARGS, NULL},
+      {"set_timeout", ten_py_extension_tester_set_timeout, METH_VARARGS, NULL},
       {"run", ten_py_extension_tester_run, METH_VARARGS, NULL},
       {NULL, NULL, 0, NULL},
   };

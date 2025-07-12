@@ -29,12 +29,12 @@ class test_extension_1 : public ten::extension_t {
             ++received_result_cnt;
 
             if (received_result_cnt < 5) {
-              TEN_ENV_LOG_INFO(
-                  ten_env, (std::string("receives ") +
-                            std::to_string(received_result_cnt) + " cmd_result")
-                               .c_str());
+              TEN_ENV_LOG(ten_env, TEN_LOG_LEVEL_INFO,
+                          (std::string("receives ") +
+                           std::to_string(received_result_cnt) + " cmd_result")
+                              .c_str());
             } else if (received_result_cnt == 5) {
-              TEN_ENV_LOG_INFO(ten_env, "receives 5 cmd result");
+              TEN_ENV_LOG(ten_env, TEN_LOG_LEVEL_INFO, "receives 5 cmd result");
               ten_env.return_result(std::move(cmd_result));
             }
           });
@@ -158,12 +158,15 @@ TEST(CmdResultTest, MultipleResult5) {  // NOLINT
                 "app": "msgpack://127.0.0.1:8001/"
              }],
              "connections": [{
+               "app": "msgpack://127.0.0.1:8001/",
                "extension": "test_extension_1",
                "cmd": [{
                  "name": "hello_world",
                  "dest": [{
+                   "app": "msgpack://127.0.0.1:8001/",
                    "extension": "test_extension_2"
                  },{
+                   "app": "msgpack://127.0.0.1:8001/",
                    "extension": "test_extension_3"
                  }]
                }]

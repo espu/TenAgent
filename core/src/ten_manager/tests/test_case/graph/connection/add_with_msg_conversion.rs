@@ -59,14 +59,16 @@ mod tests {
                 app: Some("http://example.com:8000".to_string()),
                 extension: Some("extension_1".to_string()),
                 subgraph: None,
+                selector: None,
             },
-            cmd: Some(vec![GraphMessageFlow {
-                name: "cmd_with_conversion".to_string(),
-                dest: vec![GraphDestination {
+            cmd: Some(vec![GraphMessageFlow::new(
+                "cmd_with_conversion".to_string(),
+                vec![GraphDestination {
                     loc: GraphLoc {
                         app: Some("http://example.com:8000".to_string()),
                         extension: Some("extension_2".to_string()),
                         subgraph: None,
+                        selector: None,
                     },
                     msg_conversion: Some(MsgAndResultConversion {
                         msg: Some(MsgConversion {
@@ -110,7 +112,8 @@ mod tests {
                         }),
                     }),
                 }],
-            }]),
+                vec![],
+            )]),
             data: None,
             audio_frame: None,
             video_frame: None,
@@ -146,8 +149,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_add_connection_with_fixed_value_msg_conversion() {
+    #[tokio::test]
+    async fn test_add_connection_with_fixed_value_msg_conversion() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -155,7 +158,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -217,7 +221,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion.clone()),
-        );
+        )
+        .await;
 
         assert!(result.is_ok());
         assert!(graph.connections.is_some());
@@ -275,8 +280,9 @@ mod tests {
         assert_eq!(rule2.value.as_ref().unwrap().as_i64().unwrap(), 42);
     }
 
-    #[test]
-    fn test_add_connection_with_fixed_value_msg_conversion_with_required() {
+    #[tokio::test]
+    async fn test_add_connection_with_fixed_value_msg_conversion_with_required()
+    {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -284,7 +290,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -336,13 +343,15 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion.clone()),
-        );
+        )
+        .await;
 
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_add_connection_with_fixed_value_result_conversion_with_required() {
+    #[tokio::test]
+    async fn test_add_connection_with_fixed_value_result_conversion_with_required(
+    ) {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -350,7 +359,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -402,14 +412,16 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
         println!("result: {result:?}");
 
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_add_connection_with_from_original_msg_conversion_with_required() {
+    #[tokio::test]
+    async fn test_add_connection_with_from_original_msg_conversion_with_required(
+    ) {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -417,7 +429,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -467,13 +480,14 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion.clone()),
-        );
+        )
+        .await;
 
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_add_connection_with_from_original_msg_conversion() {
+    #[tokio::test]
+    async fn test_add_connection_with_from_original_msg_conversion() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -481,7 +495,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -531,7 +546,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         println!("result: {result:?}");
 
@@ -562,8 +578,8 @@ mod tests {
         assert!(rule.value.is_none());
     }
 
-    #[test]
-    fn test_add_connection_with_msg_and_result_conversion() {
+    #[tokio::test]
+    async fn test_add_connection_with_msg_and_result_conversion() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -571,7 +587,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -632,7 +649,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
         eprintln!("result: {result:?}");
 
         assert!(result.is_ok());
@@ -667,8 +685,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_add_connection_with_invalid_msg_conversion() {
+    #[tokio::test]
+    async fn test_add_connection_with_invalid_msg_conversion() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -676,7 +694,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -721,7 +740,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         // Should fail validation due to empty rules.
         assert!(result.is_err());
@@ -729,8 +749,8 @@ mod tests {
         assert!(error_msg.contains("conversion rules are empty"));
     }
 
-    #[test]
-    fn test_add_connection_with_invalid_forward_conversion_1() {
+    #[tokio::test]
+    async fn test_add_connection_with_invalid_forward_conversion_1() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -738,7 +758,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -808,7 +829,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         println!("result: {result:?}");
 
@@ -816,8 +838,8 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_add_connection_with_result_conversion_success() {
+    #[tokio::test]
+    async fn test_add_connection_with_result_conversion_success() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -825,7 +847,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -895,15 +918,16 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         println!("result: {result:?}");
 
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_add_connection_with_result_conversion_failure() {
+    #[tokio::test]
+    async fn test_add_connection_with_result_conversion_failure() {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
 
@@ -911,7 +935,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -981,15 +1006,16 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         println!("result: {result:?}");
 
         assert!(result.is_err());
     }
 
-    #[test]
-    fn test_add_connection_with_msg_conversion_without_result_conversion_failure(
+    #[tokio::test]
+    async fn test_add_connection_with_msg_conversion_without_result_conversion_failure(
     ) {
         let mut pkgs_cache = HashMap::new();
         let mut graphs_cache = HashMap::new();
@@ -998,7 +1024,8 @@ mod tests {
             &mut pkgs_cache,
             &mut graphs_cache,
             TEST_DIR,
-        );
+        )
+        .await;
 
         // Create a graph with two nodes.
         let mut graph = Graph {
@@ -1057,7 +1084,8 @@ mod tests {
             "ext2".to_string(),
             &pkgs_cache,
             Some(msg_conversion),
-        );
+        )
+        .await;
 
         println!("result: {result:?}");
 
