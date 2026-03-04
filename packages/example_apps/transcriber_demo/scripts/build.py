@@ -26,12 +26,20 @@ Usage:
 """
 
 import argparse
+import io
+import os as os_module
 import platform
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import List, Tuple
+
+# To solve Error: 'gbk' codec can't encode character '\u2713' in MinGW/Windows
+# CJK environment. \u2713: ✓ (check sign)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 
 def detect_os() -> str:
@@ -160,6 +168,9 @@ def find_npm_executable(npm_cmd: str = "npm") -> str:
         RuntimeError: If npm is not found
     """
     try:
+        if sys.platform == "win32" and not npm_cmd.endswith(".cmd"):
+            npm_cmd = f"{npm_cmd}.cmd"
+
         subprocess.run(
             [npm_cmd, "--version"], capture_output=True, text=True, check=True
         )
@@ -271,14 +282,16 @@ def find_tgn_executable() -> str:
         RuntimeError: If tgn is not found
     """
     try:
+        tgn_cmd = "tgn.bat" if sys.platform == "win32" else "tgn"
+
         subprocess.run(
-            ["tgn", "--version"], capture_output=True, text=True, check=True
+            [tgn_cmd, "--version"], capture_output=True, text=True, check=True
         )
 
         if sys.platform == "win32":
             full_path = (
                 subprocess.run(
-                    ["where", "tgn"],
+                    ["where", tgn_cmd],
                     capture_output=True,
                     text=True,
                     check=True,
@@ -497,12 +510,23 @@ def build_cxx_extensions(
 
         # On macOS, use default clang compiler
         # On other platforms, add custom flags
-        if os_type != "mac":
+        if os_type == "linux":
             tgn_gen_cmd.extend(
                 [
                     "--",
                     "is_clang=false",
                     "enable_sanitizer=false",
+                    "vs_version=2022",
+                ]
+            )
+        elif os_type == "win":
+            tgn_gen_cmd.extend(
+                [
+                    "--",
+                    "is_mingw=false",
+                    "is_clang=true",
+                    "enable_sanitizer=false",
+                    "vs_version=2022",
                 ]
             )
 
@@ -518,16 +542,75 @@ def build_cxx_extensions(
         return False
 
     # Run tgn build
+    #
+    # HACK: On Windows, there is a fundamental incompatibility between the
+    # Windows console's GBK code page, MSVC's default GBK-encoded error
+    # output, and Python's UTF-8 stdout. Directly piping subprocess output
+    # causes encoding crashes. As a workaround, we use the filesystem as
+    # an intermediary to decouple encoding from display:
+    # Subprocess writes to a temp file in GBK, then we read it back with
+    # error-tolerant decoding.
+    log_path = None
     try:
         print_info(f"Running tgn build {os_type} {cpu_type} {build_type}...")
-        subprocess.run(
-            [tgn_path, "build", os_type, cpu_type, build_type],
-            cwd=str(root_dir),
-            check=True,
-            capture_output=False,
-        )
+
+        # Create a temporary file to capture output
+        with tempfile.NamedTemporaryFile(
+            mode='w+', delete=False, suffix='.log',
+            encoding='gbk', errors='replace'
+        ) as temp_log:
+            log_path = temp_log.name
+
+        # Redirect output to file to avoid console buffer issues
+        with open(log_path, 'w', encoding='gbk', errors='replace') as log_file:
+            result = subprocess.run(
+                [tgn_path, "build", os_type, cpu_type, build_type],
+                cwd=str(root_dir),
+                check=True,
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+            )
+
+        # Read and display the log file
+        with open(
+            log_path, 'r', encoding='gbk', errors='replace'
+        ) as log_file:
+            output = log_file.read()
+            if output.strip():
+                print(output)
+
         print_success("tgn build completed")
+
+        # Clean up temp file
+        if log_path and os_module.path.exists(log_path):
+            try:
+                os_module.unlink(log_path)
+            except Exception:
+                pass
+
     except subprocess.CalledProcessError as e:
+        # Read the log file to show error details
+        if log_path and os_module.path.exists(log_path):
+            try:
+                with open(
+                    log_path, 'r', encoding='gbk', errors='replace'
+                ) as log_file:
+                    output = log_file.read()
+                    if output.strip():
+                        print("\n=== Build Error Details (Full Output) ===")
+                        # Temporarily show full output to debug
+                        print(output)
+                        print("\n=== End of Full Output ===")
+                    else:
+                        print_warning("Build log file is empty")
+
+                # Clean up temp file
+                os_module.unlink(log_path)
+            except Exception as read_error:
+                print_warning(f"Could not read build log: {read_error}")
+        else:
+            print_warning(f"Build log file not found at: {log_path}")
+
         print_error(f"tgn build failed (exit code: {e.returncode})")
         return False
 
