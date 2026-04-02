@@ -1,7 +1,7 @@
 {
   "type": "app",
   "name": "agent_demo",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "dependencies": [
     {
       "type": "system",
@@ -146,6 +146,12 @@
     },
     {
       "path": "../../../ten_packages/extension/weatherapi_tool_python"
+    },
+    {
+      "path": "../../../ten_packages/extension/oracle_asr_python"
+    },
+    {
+      "path": "../../../ten_packages/extension/oracle_tts_python"
     }
   ],
   "scripts": {
