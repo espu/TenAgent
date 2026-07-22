@@ -3,6 +3,7 @@
 # Licensed under the Apache License, Version 2.0.
 # See the LICENSE file for more information.
 #
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from time import time
@@ -11,6 +12,7 @@ from typing import TypedDict
 from agora_token_builder import RtcTokenBuilder
 from ten_runtime import AsyncTenEnv
 from ten_ai_base.config import BaseConfig
+from ten_ai_base.message import ModuleErrorCode
 from ten_ai_base.utils import encrypt
 from spatius import (
     AgoraEgressConfig,
@@ -206,6 +208,8 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
         self.config: SpatiusConfig | None = None
         self.session = None
         self.ten_env: AsyncTenEnv | None = None
+        self.connection_id = ""
+        self.event_loop: asyncio.AbstractEventLoop | None = None
 
     def _on_frame_received(self, frame_data: bytes, is_last: bool) -> None:
         """Handle animation frames received from avatar service."""
@@ -219,6 +223,24 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
         """Handle errors from avatar service."""
         if self.ten_env:
             self.ten_env.log_error(f"[Spatius] Session error: {error}")
+            if self.event_loop:
+                self.event_loop.call_soon_threadsafe(
+                    self._report_sdk_error,
+                    error,
+                )
+
+    def _report_sdk_error(self, error: Exception) -> None:
+        if not self.ten_env:
+            return
+        asyncio.create_task(
+            self._send_error(
+                self.ten_env,
+                f"Spatius session error: {error}",
+                code=ModuleErrorCode.FATAL_ERROR.value,
+                vendor_code=type(error).__name__,
+                vendor_message=str(error),
+            )
+        )
 
     def _on_close(self) -> None:
         """Handle session close from avatar service."""
@@ -232,6 +254,7 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
     async def validate_config(self, ten_env: AsyncTenEnv) -> bool:
         """Validate Spatius configuration."""
         try:
+            self.event_loop = asyncio.get_running_loop()
             self.config = await SpatiusConfig.create_async(ten_env)
             self.ten_env = ten_env
             self.config.update_params()
@@ -258,6 +281,13 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
 
         except Exception as e:
             ten_env.log_error(f"[Spatius] Config validation failed: {e}")
+            await self._send_error(
+                ten_env,
+                f"Spatius config validation failed: {e}",
+                code=ModuleErrorCode.FATAL_ERROR.value,
+                vendor_code=type(e).__name__,
+                vendor_message=str(e),
+            )
             return False
 
     def _masked_api_key(self) -> str:
@@ -329,6 +359,7 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
 
         # Establish WebSocket connection
         connection_id = await self.session.start()
+        self.connection_id = str(connection_id)
         ten_env.log_info(
             f"[Spatius] Connected successfully (connection_id={connection_id})"
         )
@@ -348,6 +379,7 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
                 ten_env.log_warn(f"[Spatius] Error during disconnect: {e}")
             finally:
                 self.session = None
+                self.connection_id = ""
 
         ten_env.log_info("[Spatius] Disconnected")
 
@@ -387,3 +419,32 @@ class SpatiusAvatarExtension(AsyncAvatarBaseExtension):
         if self.config:
             return (self.config.dump, self.config.dump_path)
         return (False, "")
+
+    def get_vendor_name(self) -> str:
+        return "spatius"
+
+    def get_reporting_session_id(self) -> str:
+        return self.config.agora_uid if self.config else ""
+
+    def get_vendor_metadata(self) -> dict:
+        if not self.config:
+            return {"name": "spatius"}
+        vendor_metadata = {
+            "name": "spatius",
+            "key": (
+                encrypt(self.config.spatius_api_key)
+                if self.config.spatius_api_key
+                else ""
+            ),
+            "model": self.config.spatius_avatar_id,
+            "region": self._region(),
+            "mode": self.config.audio_format,
+            "avatar_id": self.config.spatius_avatar_id,
+            "avatar_session_id": self.connection_id,
+            "app_id": self.config.spatius_app_id,
+        }
+        return {
+            key: value
+            for key, value in vendor_metadata.items()
+            if value not in ("", None)
+        }
